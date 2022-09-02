@@ -38,6 +38,8 @@ Usage
 ```
 $ eruza --profile dev exec func azure functionapp publish yourfunc
 ```
+
+```
 $ eruza --profile dev env
 ...
 ARM_TENANT_ID=...
