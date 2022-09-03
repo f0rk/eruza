@@ -2,8 +2,10 @@
 
 import argparse
 import configparser
+import json
 import os
 import shutil
+import subprocess
 import sys
 
 
@@ -37,6 +39,9 @@ def main():
 
     eval_parser = subparsers.add_parser("eval")
     eval_parser.set_defaults(which="eval")
+
+    refresh_parser = subparsers.add_parser("refresh")
+    refresh_parser.set_defaults(which="refresh")
 
     args = parser.parse_args()
 
@@ -89,7 +94,56 @@ def main():
     new_environ["ERUZA"] = "1"
     new_environ["ERUZA_PROFILE"] = profile
 
-    if args.which == "env":
+    do_refresh = False
+    if args.which == "refresh":
+        do_refresh = True
+    else:
+        access_tokens_path = os.path.expanduser("~/.azure/accessTokens.json")
+        if os.path.exists(access_tokens_path):
+
+            found_token = False
+
+            with open(access_tokens_path, "rt") as access_tokens_fp:
+                access_tokens = json.load(access_tokens_fp)
+
+                for access_token in access_tokens:
+                    if access_token["servicePrincipalId"] == new_environ["ARM_CLIENT_ID"]:
+                        found_token = True
+                        break
+
+            if not found_token:
+                do_refresh = True
+
+    if do_refresh:
+        az_login_args = [
+            "az",
+            "login",
+            "--service-principal",
+            "-u",
+            new_environ["ARM_APPLICATION_ID"],
+            "-p",
+            new_environ["ARM_CLIENT_SECRET"],
+            "--tenant",
+            new_environ["ARM_TENANT_ID"],
+        ]
+
+        az_login_process = subprocess.Popen(
+            az_login_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = az_login_process.communicate()
+
+        if az_login_process.returncode:
+            sys.stderr.write("refresh failed!\n")
+            sys.stderr.write(stdout)
+            sys.stderr.write(stderr)
+            sys.stderr.flush()
+            sys.exit(az_login_process.returncode)
+
+    if args.which == "refresh":
+        pass
+    elif args.which == "env":
         for key, value in new_environ.items():
             print("{}={}".format(key, value))
     elif args.which == "eval":

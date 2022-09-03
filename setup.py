@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name="eruza",
-    version="0.1",
+    version="0.2",
     description="Azure + CLI",
     author="Ryan P. Kelly",
     author_email="ryan@ryankelly.us",
