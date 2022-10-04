@@ -1,11 +1,11 @@
-# Copyright 2021, Ryan P. Kelly.
+# Copyright 2022, Ryan P. Kelly.
 
 from setuptools import setup
 
 
 setup(
     name="eruza",
-    version="0.2",
+    version="0.3",
     description="Azure + CLI",
     author="Ryan P. Kelly",
     author_email="ryan@ryankelly.us",

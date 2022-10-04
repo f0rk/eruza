@@ -136,8 +136,8 @@ def main():
 
         if az_login_process.returncode:
             sys.stderr.write("refresh failed!\n")
-            sys.stderr.write(stdout)
-            sys.stderr.write(stderr)
+            sys.stderr.buffer.write(stdout)
+            sys.stderr.buffer.write(stderr)
             sys.stderr.flush()
             sys.exit(az_login_process.returncode)
 
