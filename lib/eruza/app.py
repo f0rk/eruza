@@ -49,27 +49,30 @@ def main():
     credentials_path = os.path.join(credentials_dir, "credentials")
 
     if not os.path.exists(credentials_dir):
-        sys.stderr.write("no credentials dir\n")
-        sys.stderr.flush()
-        sys.exit(1)
+        if not args.ignore_missing:
+            sys.stderr.write("no credentials dir\n")
+            sys.stderr.flush()
+            sys.exit(1)
 
     if not os.path.exists(credentials_path):
-        sys.stderr.write("no credentials path\n")
-        sys.stderr.flush()
-        sys.exit(1)
+        if not args.ignore_missing:
+            sys.stderr.write("no credentials path\n")
+            sys.stderr.flush()
+            sys.exit(1)
 
-    file_stat = os.stat(credentials_path)
-    file_mask = oct(file_stat.st_mode)[-3:]
-    if file_mask != "600":
-        sys.stderr.write(
-            "permissions {} on {} are too broad, must be exactly 600\n"
-            .format(
-                file_mask,
-                credentials_path,
+    if os.path.exists(credentials_path):
+        file_stat = os.stat(credentials_path)
+        file_mask = oct(file_stat.st_mode)[-3:]
+        if file_mask != "600":
+            sys.stderr.write(
+                "permissions {} on {} are too broad, must be exactly 600\n"
+                .format(
+                    file_mask,
+                    credentials_path,
+                )
             )
-        )
-        sys.stderr.flush()
-        sys.exit(1)
+            sys.stderr.flush()
+            sys.exit(1)
 
     config = configparser.ConfigParser()
     config.read(credentials_path)
