@@ -74,8 +74,11 @@ def main():
             sys.stderr.flush()
             sys.exit(1)
 
-    config = configparser.ConfigParser()
-    config.read(credentials_path)
+    if os.path.exists(credentials_path):
+        config = configparser.ConfigParser()
+        config.read(credentials_path)
+    else:
+        config = {}
 
     profile = os.environ.get("ARM_PROFILE")
     if args.profile:
