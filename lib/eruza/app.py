@@ -48,13 +48,17 @@ def main():
     credentials_dir = os.path.expanduser("~/.azure/")
     credentials_path = os.path.join(credentials_dir, "credentials")
 
+    is_missing = False
+
     if not os.path.exists(credentials_dir):
+        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no credentials dir\n")
             sys.stderr.flush()
             sys.exit(1)
 
     if not os.path.exists(credentials_path):
+        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no credentials path\n")
             sys.stderr.flush()
@@ -85,6 +89,7 @@ def main():
         profile = args.profile
 
     if profile not in config:
+        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no config for env {}\n".format(profile))
             sys.stderr.flush()
@@ -105,7 +110,7 @@ def main():
         do_refresh = True
     else:
         access_tokens_path = os.path.expanduser("~/.azure/accessTokens.json")
-        if os.path.exists(access_tokens_path):
+        if os.path.exists(access_tokens_path) and not is_missing:
 
             found_token = False
 
@@ -120,7 +125,7 @@ def main():
             if not found_token:
                 do_refresh = True
 
-    if do_refresh:
+    if do_refresh and not is_missing:
         az_login_args = [
             "az",
             "login",
