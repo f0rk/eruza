@@ -48,17 +48,13 @@ def main():
     credentials_dir = os.path.expanduser("~/.azure/")
     credentials_path = os.path.join(credentials_dir, "credentials")
 
-    is_missing = False
-
     if not os.path.exists(credentials_dir):
-        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no credentials dir\n")
             sys.stderr.flush()
             sys.exit(1)
 
     if not os.path.exists(credentials_path):
-        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no credentials path\n")
             sys.stderr.flush()
@@ -89,7 +85,6 @@ def main():
         profile = args.profile
 
     if profile not in config:
-        is_missing = True
         if not args.ignore_missing:
             sys.stderr.write("no config for env {}\n".format(profile))
             sys.stderr.flush()
@@ -110,7 +105,7 @@ def main():
         do_refresh = True
     else:
         access_tokens_path = os.path.expanduser("~/.azure/accessTokens.json")
-        if os.path.exists(access_tokens_path) and not is_missing:
+        if os.path.exists(access_tokens_path):
 
             found_token = False
 
@@ -118,39 +113,58 @@ def main():
                 access_tokens = json.load(access_tokens_fp)
 
                 for access_token in access_tokens:
-                    if access_token["servicePrincipalId"] == new_environ["ARM_CLIENT_ID"]:
-                        found_token = True
-                        break
+                    if "ARM_CLIENT_ID" in new_environ:
+                        if access_token["servicePrincipalId"] == new_environ["ARM_CLIENT_ID"]:
+                            found_token = True
+                            break
 
             if not found_token:
                 do_refresh = True
 
-    if do_refresh and not is_missing:
-        az_login_args = [
-            "az",
-            "login",
-            "--service-principal",
-            "-u",
-            new_environ["ARM_APPLICATION_ID"],
-            "-p",
-            new_environ["ARM_CLIENT_SECRET"],
-            "--tenant",
-            new_environ["ARM_TENANT_ID"],
-        ]
+    if do_refresh:
 
-        az_login_process = subprocess.Popen(
-            az_login_args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+        has_vars = (
+            "ARM_APPLICATION_ID" in new_environ
+            and "ARM_CLIENT_SECRET" in new_environ
+            and "ARM_TENANT_ID" in new_environ
         )
-        stdout, stderr = az_login_process.communicate()
 
-        if az_login_process.returncode:
-            sys.stderr.write("refresh failed!\n")
-            sys.stderr.buffer.write(stdout)
-            sys.stderr.buffer.write(stderr)
-            sys.stderr.flush()
-            sys.exit(az_login_process.returncode)
+        if not has_vars:
+            if args.ignore_missing:
+                pass
+            else:
+                sys.stderr.write(
+                    "missing ARM_APPLICATION_ID, ARM_CLIENT_SECRET, or "
+                    "ARM_TENANT_ID\n"
+                )
+                sys.stderr.flush()
+                sys.exit(1)
+        else:
+            az_login_args = [
+                "az",
+                "login",
+                "--service-principal",
+                "-u",
+                new_environ["ARM_APPLICATION_ID"],
+                "-p",
+                new_environ["ARM_CLIENT_SECRET"],
+                "--tenant",
+                new_environ["ARM_TENANT_ID"],
+            ]
+
+            az_login_process = subprocess.Popen(
+                az_login_args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            stdout, stderr = az_login_process.communicate()
+
+            if az_login_process.returncode:
+                sys.stderr.write("refresh failed!\n")
+                sys.stderr.buffer.write(stdout)
+                sys.stderr.buffer.write(stderr)
+                sys.stderr.flush()
+                sys.exit(az_login_process.returncode)
 
     if args.which == "refresh":
         pass
