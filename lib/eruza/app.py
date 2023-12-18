@@ -114,7 +114,7 @@ def main():
 
                 for access_token in access_tokens:
                     if "ARM_CLIENT_ID" in new_environ:
-                        if access_token["servicePrincipalId"] == new_environ["ARM_CLIENT_ID"]:
+                        if access_token.get("servicePrincipalId") == new_environ["ARM_CLIENT_ID"]:
                             found_token = True
                             break
 
